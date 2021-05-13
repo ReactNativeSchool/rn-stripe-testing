@@ -8,7 +8,7 @@ const API_URL = 'https://plastic-wry-bladder.glitch.me';
 
 export const Checkout = () => {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
-  const [loading, setLoading] = React.useState(false);
+  const [clientSecret, setClientSecret] = React.useState();
 
   const fetchPaymentSheetParams = async () => {
     const response = await fetch(`${API_URL}/checkout`, {
@@ -17,37 +17,29 @@ export const Checkout = () => {
         'Content-Type': 'application/json',
       },
     });
-    const {
-      paymentIntent,
-      // ephemeralKey,
-      // customer
-    } = await response.json();
+    const { paymentIntent } = await response.json();
 
     return {
       paymentIntent,
-      // ephemeralKey,
-      // customer,
     };
   };
 
   const initializePaymentSheet = async () => {
-    const {
-      paymentIntent,
-      // ephemeralKey, //customer
-    } = await fetchPaymentSheetParams();
+    const { paymentIntent } = await fetchPaymentSheetParams();
 
     const { error } = await initPaymentSheet({
-      // customerId: customer,
-      // customerEphemeralKeySecret: ephemeralKey,
       paymentIntentClientSecret: paymentIntent,
     });
     if (!error) {
-      setLoading(true);
+      setClientSecret(paymentIntent);
     }
   };
 
   const openPaymentSheet = async () => {
-    const { error } = await presentPaymentSheet();
+    if (!clientSecret) {
+      return;
+    }
+    const { error } = await presentPaymentSheet({ clientSecret });
 
     if (error) {
       Alert.alert(`Error code: ${error.code}`, error.message);
